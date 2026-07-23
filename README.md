@@ -227,6 +227,7 @@ Automate container security auditing by embedding Trivy checks directly within s
 ### GitHub Actions Workflow
 Create a configuration file at the following path in your repository: .github/workflows/trivy-scan.yml. This script triggers automated validation policies on every mainline code push or pull request transaction.
 
+```groovy
 name: Security Scan & Build Verification
 on:
   push:
@@ -270,7 +271,7 @@ jobs:
       if: always() 
       with:
         sarif_file: 'trivy-results.sarif'
-
+```
 
 ## 👨‍💻 Author
 
