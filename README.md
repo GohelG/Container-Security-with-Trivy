@@ -95,12 +95,16 @@ Create the following three application files exactly as specified below:
 
 ### app.py
 
-from flask import Flaskapp = Flask(__name__)
+import os
+from flask import Flask
 
-@app.route('/')def home():
-    return "Hello from Dockerized Flask App!"
+app = Flask(__name__)
 
-if __name__ == '__main__':
+@app.route('/')
+def home():
+    returen "Hello, From Dockerized Flask App!"
+
+if __name__ = '__main__':
     app.run(host='0.0.0.0', port=5000)
 
 ### requirements.txt
