@@ -1,0 +1,48 @@
+# .github/workflows/trivy-scan.yml
+name: 🚀 DevSecOps CI/CD Security Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+  security-events: write  # 🔒 Required to publish Trivy SARIF reports to GitHub Security tab
+
+jobs:
+  devsecops-audit:
+    name: 🛡️ Code & Container Security Verification
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📋 Checkout Source Infrastructure Code
+        uses: actions/checkout@v4
+
+      - name: 🔍 Run Trivy Source Code Analyzer (Config & Secrets)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1' # 🛑 Fails the pipeline if vulnerabilities or secrets are found
+
+      - name: 📦 Assemble Hardened Production Container
+        run: |
+          docker build -f Dockerfile.secure -t production-app:latest .
+
+      - name: 🧪 Execute Trivy Artifact Scan (Target Container Image)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'production-app:latest'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: 📊 Publish Security Metrics to GitHub Alerts Dashboard
+        uses: github/codeql-action/upload-sarif@v3
+        if: always() # ⚙️ Always runs to ensure data uploads even if previous steps fail
+        with:
+          sarif_file: 'trivy-results.sarif'
