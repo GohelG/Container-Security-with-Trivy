@@ -1,4 +1,4 @@
-## 🎯 Docker & Trivy Security Lab
+# 🎯 Docker & Trivy Security Lab
 
 Docker provides application isolation and portability, but insecure container images can expose vulnerabilities such as outdated operating system packages, vulnerable dependencies, hardcoded secrets, and excessive privileges.
 
@@ -11,23 +11,19 @@ This hands-on project demonstrates how to:
 - Automate security scanning using GitHub Actions
 
 This project is ideal for learning **Container Security**, **DevSecOps**, and **CI/CD Security Automation**.
-```
 
 ---
 
-# Tool Installation
+## 🛠️ Tool Installation
 
 ```bash
 sudo apt update
 sudo apt install docker.io -y
 ```
+
 ---
 
-# Trivy Installation
-
-```bash
-wget -qO - https://github.io
-```
+## 📦 Trivy Installation
 
 ```bash
 sudo apt-get update
@@ -47,11 +43,12 @@ sudo apt-get install trivy -y
 
 trivy --version
 ```
-````
 
 ---
 
-# app.py
+## 🐍 Source Files
+
+### app.py
 
 ```python
 from flask import Flask
@@ -66,9 +63,7 @@ if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
 ```
 
----
-
-# requirements.txt
+### requirements.txt
 
 ```text
 Flask==2.2.5
@@ -77,7 +72,9 @@ requests==2.19.1
 
 ---
 
-# Dockerfile
+## 🐳 Docker Setup
+
+### Dockerfile (Vulnerable)
 
 ```dockerfile
 FROM python:3.7
@@ -95,9 +92,7 @@ EXPOSE 5000
 CMD ["python", "app.py"]
 ```
 
----
-
-# Secure Dockerfile
+### Dockerfile.secure (Hardened)
 
 ```dockerfile
 FROM python:3.11-alpine
@@ -128,56 +123,48 @@ CMD ["python", "app.py"]
 
 ---
 
-# Build Commands
+## 💻 Build & Execution Commands
 
 ```bash
+# Build the vulnerable image
 docker build -t flask-vuln-app .
-```
 
-```bash
+# Run the container
 docker run -d -p 5000:5000 --name flask-container flask-vuln-app
-```
 
-```bash
+# Check container status
 docker ps
-```
 
-```bash
+# Stop and remove the container
 docker stop flask-container
 docker rm flask-container
 ```
 
 ---
 
-# Trivy Scan
-
-Use the same image name everywhere.
+## 🔍 Trivy Scanning Commands
 
 ```bash
+# Basic image scan
 trivy image flask-vuln-app
-```
 
-```bash
+# Filter by high and critical severity
 trivy image --severity HIGH,CRITICAL flask-vuln-app
-```
 
-```bash
+# Create reports directory
 mkdir -p reports
-```
 
-```bash
+# Export JSON vulnerability report
 trivy image \
 -f json \
 -o reports/flask-report.json \
 flask-vuln-app
-```
 
-```bash
+# View JSON results using jq
 sudo apt install jq -y
 jq . reports/flask-report.json
-```
 
-```bash
+# Export HTML vulnerability report
 trivy image \
 --format template \
 --template "@contrib/html.tpl" \
@@ -187,7 +174,7 @@ flask-vuln-app
 
 ---
 
-# GitHub Actions
+## 🚀 GitHub Actions CI/CD Pipeline
 
 ```yaml
 # .github/workflows/trivy-scan.yml
@@ -242,7 +229,7 @@ jobs:
 
 ---
 
-# 📂 Folder Structure
+## 📂 Folder Structure
 
 ```text
 Container-Security-with-Trivy/
@@ -267,43 +254,36 @@ Container-Security-with-Trivy/
 ## 📊 Expected Results
 
 After scanning the vulnerable image, Trivy should detect:
-
-- High and Critical OS package vulnerabilities
-- Vulnerable Python dependencies
-- CVEs associated with Requests 2.19.1
+- High and Critical OS package vulnerabilities.
+- Vulnerable Python dependencies.
+- CVEs associated with Requests 2.19.1.
 
 After rebuilding using **Dockerfile.secure**, the number of High and Critical vulnerabilities should be significantly reduced.
-```
 
 ---
 
 ## 🎓 Learning Outcomes
 
 By completing this project, you will learn:
-
-- Docker image security fundamentals
-- Vulnerability scanning using Trivy
-- Container hardening best practices
-- Least Privilege Principle
-- Secure Dockerfile design
-- DevSecOps automation using GitHub Actions
-- Generating JSON, HTML, and SARIF security reports
-```
+- **Docker Image Security**: Understanding attack vectors in image builds.
+- **Vulnerability Scanning**: Practical vulnerability identification with Trivy.
+- **Container Hardening**: Applying industry-best security rules.
+- **Least Privilege Principle**: Restricting root container system access.
+- **Secure Architecture**: Structuring robust production Dockerfiles.
+- **DevSecOps Automation**: Writing integrated CI/CD security workflows.
+- **Reporting Metrics**: Exporting JSON, HTML, and SARIF log objects.
 
 ---
 
 ## 👨‍💻 Author
 
-**Gautam Gohel**
-
-**System Administrator | SRE Engineer | Cloud Engineer | DevSecOps Enthusiast**
+**Gautam Gohel**  
+*System Administrator | SRE Engineer | Cloud Engineer | DevSecOps Enthusiast*
 
 ### Connect with Me
 
-- GitHub: https://github.com/GohelG
-- LinkedIn: *(https://www.linkedin.com/in/gautam-gohel-83875593/)*
+- 💻 [GitHub](https://github.com/GohelG)
+- 👔 [LinkedIn](https://www.linkedin.com/in/gautam-gohel-83875593/)
 
 ---
-
 ⭐ If you found this project useful, consider giving it a star!
-```
