@@ -146,10 +146,10 @@ docker rm flask-container
 
 ```bash
 # Basic image scan
-trivy image flask-vuln-app
+trivy image flask-vuln-app:latest
 
 # Filter by high and critical severity
-trivy image --severity HIGH,CRITICAL flask-vuln-app
+trivy image --severity HIGH,CRITICAL flask-vuln-app:latest
 
 # Create reports directory
 mkdir -p reports
@@ -158,7 +158,7 @@ mkdir -p reports
 trivy image \
 -f json \
 -o reports/flask-report.json \
-flask-vuln-app
+flask-vuln-app:letest
 
 # View JSON results using jq
 sudo apt install jq -y
@@ -169,7 +169,7 @@ trivy image \
 --format template \
 --template "@contrib/html.tpl" \
 -o reports/flask-report.html \
-flask-vuln-app
+flask-vuln-app:latest
 ```
 
 ---
