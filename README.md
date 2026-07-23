@@ -238,15 +238,18 @@ Container-Security-with-Trivy/
 │   └── workflows/
 │       └── trivy-scan.yml
 │
-├── reports/
-│   ├── flask-report.html
-│   └── flask-report.json
-│
-├── app.py
-├── requirements.txt
 ├── Dockerfile
 ├── Dockerfile.secure
-└── README.md
+├── README.md
+├── app.py
+├── dockerignore
+├── reports
+│   ├── flask-report.html
+│   └── flask-report.json
+├── requirements.txt
+└── template
+    ├── html.tpl
+    └── tml.tpl
 ```
 
 ---
