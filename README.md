@@ -1,287 +1,309 @@
-------------------------------
 ## 🎯 Docker & Trivy Security Lab
-Docker isolates applications but introduces specific security attack surfaces. This document provides a quick-start laboratory workflow to install Trivy (Aqua Security), build an intentionally vulnerable Flask image, generate security audit reports, and apply production-ready remediations. 
 
-"A practical guide to building an intentionally vulnerable Flask Docker container, scanning it for security flaws using Aqua Security Trivy, and implementing secure remediations via CI/CD pipelines."
+Docker provides application isolation and portability, but insecure container images can expose vulnerabilities such as outdated operating system packages, vulnerable dependencies, hardcoded secrets, and excessive privileges.
 
-## 📋 Table of Contents
+This hands-on project demonstrates how to:
 
-* 🛡️ Core Concepts
-* ⚡ Tool Installation
-* 🛠️ Project Setup
-* 📦 Build & Run
-* 🔍 Vulnerability Scanning
-* 🔧 Remediation & Hardening
-* 🚀 CI/CD Pipeline Automation
+- Build an intentionally vulnerable Flask Docker image
+- Scan the image using **Aqua Security Trivy**
+- Generate JSON and HTML vulnerability reports
+- Harden the container using Docker security best practices
+- Automate security scanning using GitHub Actions
 
-------------------------------
-## 🛡️ Core Concepts
-
-### 🛠️ Primary Docker Security Risks
-
-* Base Image Vulnerabilities: Outdated base operating systems containing unpatched system packages.
-* Hardcoded Secrets: Plaintext API keys, passwords, or cloud credentials baked into image layers.
-* Insecure Dockerfiles: Containers running as the root superuser or exposing unnecessary ports.
-* Outdated Dependencies: Third-party libraries (e.g., Python packages) with published CVEs.
-* Image Bloat: Unnecessary tooling inside the container that expands the total attack surface.
-
-## Why Trivy?
-Trivy is a lightweight, cloud-independent, and incredibly fast DevSecOps CLI scanner. It instantly maps out vulnerabilities in OS packages, application dependencies, infrastructure-as-code files, and plaintext secrets.
-
-1. **CLI-based & fast**
-2. **No login or cloud dependency**
-3. **Great for DevSecOps pipelines**
-4. **Supports multiple formats: JSON, table, HTML**
-
-## 📂 Production-ready Folder Structure
-
-```text
-Container-Security-with-Trivy/
-├── .github/
-│   └── workflows/
-│       └── trivy-scan.yml      # GitHub Actions automation pipeline
-├── reports/
-│   ├── flask-report.html       # Visual executive scan output (Generated)
-│   └── flask-report.json       # Machine-readable report data (Generated)
-├── app.py                      # Flask application code
-├── Dockerfile                  # Intentionally vulnerable image setup
-├── Dockerfile.secure           # Hardened production image setup
-└── requirements.txt            # Python dependencies (vulnerable or updated)
+This project is ideal for learning **Container Security**, **DevSecOps**, and **CI/CD Security Automation**.
 ```
 
-------------------------------
-## ⚡Tool Installation
+---
 
-## 1. Docker Setup
-### Install Docker engine
-sudo apt install docker.io -y
+# Tool Installation
 
-### Configure user permissions (avoids using sudo for docker commands)
-sudo groupadd docker
-sudo usermod -aG docker $USER
-newgrp docker
-
-## 2. Python-3 Setup
-### Update local packages and install Python
+```bash
 sudo apt update
-sudo apt install python3 -y
+sudo apt install docker.io -y
+```
+---
 
-### Verify the installation
-python3 --version
+# Trivy Installation
 
-## 3. Trivy Setup
+```bash
+wget -qO - https://github.io
+```
 
-### Add official Aqua Security repository keys
-sudo apt-get install wget gnupg -y
-wget -qO - https://github.io | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+```bash
+sudo apt-get update
+sudo apt-get install wget gnupg lsb-release -y
 
-### Register the source repository list
-echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://github.io generic main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key \
+| gpg --dearmor \
+| sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
 
-### Install Trivy CLI
+echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] \
+https://aquasecurity.github.io/trivy-repo/deb \
+$(lsb_release -sc) main" \
+| sudo tee /etc/apt/sources.list.d/trivy.list
+
 sudo apt-get update
 sudo apt-get install trivy -y
+
 trivy --version
+```
+````
 
-------------------------------
-## 🛠️ Project Setup
-### Directory Structure
-Execute these commands to build your application context directory:
+---
 
-mkdir flask-vuln-app && cd flask-vuln-app
-sudo chown -R $USER:$USER $(pwd)
+# app.py
 
-Create the following three application files exactly as specified below:
-
-### app.py
-
-import os
+```python
 from flask import Flask
 
 app = Flask(__name__)
 
-@app.route('/')
+@app.route("/")
 def home():
-    returen "Hello, From Dockerized Flask App!"
+    return "Hello from Dockerized Flask App!"
 
-if __name__ = '__main__':
-    app.run(host='0.0.0.0', port=5000)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
+```
 
-### requirements.txt
-flask
+---
+
+# requirements.txt
+
+```text
+Flask==2.2.5
 requests==2.19.1
+```
 
-⚠️  Note: requests v2.19.1 contains known critical CVEs that are deliberately included for Trivy to detect.
+---
 
-### Dockerfile
+# Dockerfile
 
-### Intentional Vulnerability: Using an outdated, bloated base OS imageFROM python:3.7
-### Use an outdated Python image (intentionally vulnerable)
+```dockerfile
 FROM python:3.7
 
-### Set working directory
 WORKDIR /app
 
-### Install dependencies
 COPY requirements.txt .
+
 RUN pip install --no-cache-dir -r requirements.txt
 
-### Copy source code
 COPY . .
 
-### Expose Flask default port
 EXPOSE 5000
 
-### Run the app
 CMD ["python", "app.py"]
+```
 
-------------------------------
-## 📦 Build & Run
+---
 
-### Assemble the Target Image
-docker build -t Container-Security-with-Trivy .
+# Secure Dockerfile
 
-### Launch the Application Container
-docker run -d -p 5000:5000 Container-Security-with-Trivy
+```dockerfile
+FROM python:3.11-alpine
 
-### List all running instances to locate your Container ID
-docker ps -a
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
-### Stop the running container
-docker stop <container_id>
-
-------------------------------
-## 🔍 Vulnerability Scanning
-Prepare a directory to house all safety metrics before executing scans:
-
-mkdir -p reports
-
-### Option A: Standard Terminal Output (Table)
-
-### Run a full scan and display directly in the console
-trivy image flask-vuln-app
-
-### Filter the output down to urgent issues only
-trivy image --severity CRITICAL,HIGH flask-vuln-app
-
-### Option B: Machine-Readable Report (JSON)
-
-### Generate the raw JSON log file
-trivy image -f json -o reports/flask-report.json flask-vuln-app
-
-### Optional: Install jq to pretty-print and query the JSON file
-sudo apt install jq -y
-cat reports/flask-report.json | jq .
-
-### Option C: Executive Summary (HTML)
-
-### Compile a human-friendly interactive visual web report
-trivy image --format template --template "@contrib/html.tpl" -o reports/flask-report.html flask-vuln-app
-
-------------------------------
-### Remediation & Hardening
-To mitigate the architectural flaws flagged during the Trivy scan, apply a two-step hardening strategy covering dependency management and image restructuring.
-
-### 1. Update Python Dependencies (requirements.txt)
-Replace the contents of your existing dependency file with stable, secure versions:
-
-flask>=3.0.0
-requests>=2.31.0
-
-### 2. Build the Secured Dockerfile (Dockerfile.secure)
-Create a new file named Dockerfile.secure in your root directory. This configuration enforces standard industry hardening procedures:
-
-* Minimal Base Image: Shifts from a heavy development system to a stripped-down Alpine Linux core.
-* Least-Privilege User Principle: Drops root execution privileges by creating and utilizing a non-root system user.
-* Reduced Multi-Layer Attack Surface: Aggregates installation actions and forces deterministic cache cleaning.
-
-### Use a minimal, highly secure Python runtime environmentFROM python:3.11-alpine
-
-### Set system environment adjustmentsENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    HOME=/app
 WORKDIR /app
 
-### Enforce least-privilege by initializing a locked non-root userRUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN addgroup -S appgroup && \
+    adduser -S appuser -G appgroup
 
-### Install and build dependencies securelyCOPY requirements.txt .RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt .
 
-### Bring app resources into container file boundariesCOPY app.py .
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
-### Reassign absolute ownership of the application path to the new userRUN chown -R appuser:appgroup /app
+COPY app.py .
 
-### Relinquish superuser access rightsUSER appuser
+RUN chown -R appuser:appgroup /app
+
+USER appuser
+
 EXPOSE 5000
+
 CMD ["python", "app.py"]
+```
 
-## 3. Re-verify Vulnerability Reductions
-Build and execute a differential scan against your newly hardened configuration:
+---
 
-### Build the secure image layer stack
-docker build -f Dockerfile.secure -t flask-secure-app .
+# Build Commands
 
-### Run Trivy scan to verify clean execution
-trivy image --severity CRITICAL,HIGH flask-secure-app
+```bash
+docker build -t flask-vuln-app .
+```
 
-------------------------------
-## 🚀 CI/CD Pipeline Automation
-Automate container security auditing by embedding Trivy checks directly within source control platforms.
+```bash
+docker run -d -p 5000:5000 --name flask-container flask-vuln-app
+```
 
-### GitHub Actions Workflow
-Create a configuration file at the following path in your repository: .github/workflows/trivy-scan.yml. This script triggers automated validation policies on every mainline code push or pull request transaction.
+```bash
+docker ps
+```
 
-```groovy
-name: Security Scan & Build Verification
+```bash
+docker stop flask-container
+docker rm flask-container
+```
+
+---
+
+# Trivy Scan
+
+Use the same image name everywhere.
+
+```bash
+trivy image flask-vuln-app
+```
+
+```bash
+trivy image --severity HIGH,CRITICAL flask-vuln-app
+```
+
+```bash
+mkdir -p reports
+```
+
+```bash
+trivy image \
+-f json \
+-o reports/flask-report.json \
+flask-vuln-app
+```
+
+```bash
+sudo apt install jq -y
+jq . reports/flask-report.json
+```
+
+```bash
+trivy image \
+--format template \
+--template "@contrib/html.tpl" \
+-o reports/flask-report.html \
+flask-vuln-app
+```
+
+---
+
+# GitHub Actions
+
+```yaml
+# .github/workflows/trivy-scan.yml
+name: 🚀 DevSecOps CI/CD Security Pipeline
+
 on:
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+
 permissions:
   contents: read
-  security-events: write 
+  security-events: write  # 🔒 Required to publish Trivy SARIF reports to GitHub Security tab
+
 jobs:
-  audit-and-build:
-    name: DevSecOps Code and Container Evaluation
+  devsecops-audit:
+    name: 🛡️ Code & Container Security Verification
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Source Infrastructure Code
-      uses: actions/checkout@v4
+      - name: 📋 Checkout Source Infrastructure Code
+        uses: actions/checkout@v4
 
-    - name: Run Trivy Source Code Analyzer (Config & Secrets)
-      uses: aquasecurity/trivy-action@master
-      with:
-        scan-type: 'fs'
-        scan-ref: '.'
-        format: 'table'
-        severity: 'CRITICAL,HIGH'
-        exit-code: '1' 
+      - name: 🔍 Run Trivy Source Code Analyzer (Config & Secrets)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1' # 🛑 Fails the pipeline if vulnerabilities or secrets are found
 
-    - name: Assemble Hardened Production Container
-      run: |
-        docker build -f Dockerfile.secure -t production-app:latest .
-    - name: Execute Trivy Artifact Scan (Target Container Image)
-      uses: aquasecurity/trivy-action@master
-      with:
-        image-ref: 'production-app:latest'
-        format: 'sarif'
-        output: 'trivy-results.sarif'
-        severity: 'CRITICAL,HIGH'
+      - name: 📦 Assemble Hardened Production Container
+        run: |
+          docker build -f Dockerfile.secure -t production-app:latest .
 
-    - name: Publish Security Metrics to GitHub Alerts Dashboard
-      uses: github/codeql-action/upload-sarif@v3
-      if: always() 
-      with:
-        sarif_file: 'trivy-results.sarif'
+      - name: 🧪 Execute Trivy Artifact Scan (Target Container Image)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'production-app:latest'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: 📊 Publish Security Metrics to GitHub Alerts Dashboard
+        uses: github/codeql-action/upload-sarif@v3
+        if: always() # ⚙️ Always runs to ensure data uploads even if previous steps fail
+        with:
+          sarif_file: 'trivy-results.sarif'
 ```
+
+---
+
+# 📂 Folder Structure
+
+```text
+Container-Security-with-Trivy/
+│
+├── .github/
+│   └── workflows/
+│       └── trivy-scan.yml
+│
+├── reports/
+│   ├── flask-report.html
+│   └── flask-report.json
+│
+├── app.py
+├── requirements.txt
+├── Dockerfile
+├── Dockerfile.secure
+└── README.md
+```
+
+---
+
+## 📊 Expected Results
+
+After scanning the vulnerable image, Trivy should detect:
+
+- High and Critical OS package vulnerabilities
+- Vulnerable Python dependencies
+- CVEs associated with Requests 2.19.1
+
+After rebuilding using **Dockerfile.secure**, the number of High and Critical vulnerabilities should be significantly reduced.
+```
+
+---
+
+## 🎓 Learning Outcomes
+
+By completing this project, you will learn:
+
+- Docker image security fundamentals
+- Vulnerability scanning using Trivy
+- Container hardening best practices
+- Least Privilege Principle
+- Secure Dockerfile design
+- DevSecOps automation using GitHub Actions
+- Generating JSON, HTML, and SARIF security reports
+```
+
+---
 
 ## 👨‍💻 Author
 
 **Gautam Gohel**
 
-System Administrator | SRE Engineer | Cloud & DevOps Enthusiast 🚀
+**System Administrator | SRE Engineer | Cloud Engineer | DevSecOps Enthusiast**
+
+### Connect with Me
+
+- GitHub: https://github.com/GohelG
+- LinkedIn: *(https://www.linkedin.com/in/gautam-gohel-83875593/)*
 
 ---
----
+
+⭐ If you found this project useful, consider giving it a star!
+```
