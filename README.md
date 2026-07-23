@@ -28,10 +28,10 @@ Docker isolates applications but introduces specific security attack surfaces. T
 ## Why Trivy?
 Trivy is a lightweight, cloud-independent, and incredibly fast DevSecOps CLI scanner. It instantly maps out vulnerabilities in OS packages, application dependencies, infrastructure-as-code files, and plaintext secrets.
 
-**CLI-based & fast**
-**No login or cloud dependency**
-**Great for DevSecOps pipelines**
-**Supports multiple formats: JSON, table, HTML**
+1. **CLI-based & fast**
+2. **No login or cloud dependency**
+3. **Great for DevSecOps pipelines**
+4. **Supports multiple formats: JSON, table, HTML**
 
 ## 📂 Production-ready Folder Structure
 
