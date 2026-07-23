@@ -28,8 +28,10 @@ Docker isolates applications but introduces specific security attack surfaces. T
 ## Why Trivy?
 Trivy is a lightweight, cloud-independent, and incredibly fast DevSecOps CLI scanner. It instantly maps out vulnerabilities in OS packages, application dependencies, infrastructure-as-code files, and plaintext secrets.
 
-## Production-ready Folder Structure
-flask-vuln-app/
+## 📂 Production-ready Folder Structure
+
+```text
+Container-Security-with-Trivy/
 ├── .github/
 │   └── workflows/
 │       └── trivy-scan.yml      # GitHub Actions automation pipeline
@@ -40,6 +42,7 @@ flask-vuln-app/
 ├── Dockerfile                  # Intentionally vulnerable image setup
 ├── Dockerfile.secure           # Hardened production image setup
 └── requirements.txt            # Python dependencies (vulnerable or updated)
+```
 
 ------------------------------
 ## ⚡Tool Installation
